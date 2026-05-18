@@ -1,0 +1,26 @@
+# ======== 절대 올리면 안 되는 것 ========
+.env
+.env.local
+*.env.local
+
+# ======== Node ========
+node_modules/
+
+# ======== Python 가상환경 ========
+**/.venv/
+**/__pycache__/
+*.pyc
+
+# ======== 업로드된 사진 ========
+uploads/
+
+# ======== Vite/build ========
+node_modules/.vite/
+dist/
+build/
+
+# ======== IDE / OS ========
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

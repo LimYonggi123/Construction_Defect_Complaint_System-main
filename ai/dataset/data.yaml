@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 3
+names: ['Crack', 'leak', 'tile']
+
+roboflow:
+  workspace: s-workspace-aky01
+  project: object-detection-f313s
+  version: 7
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/s-workspace-aky01/object-detection-f313s/dataset/7

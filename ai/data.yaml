@@ -1,0 +1,15 @@
+# ============================================================
+# ai/data.yaml
+# YOLOv8 데이터셋 설정.
+# 이 파일이 있는 폴더(ai/) 기준으로 dataset/ 하위에 이미지/라벨이 있다고 가정.
+# 원본 zip 에 valid 폴더가 없으므로 val 은 test 와 동일하게 둠.
+# 향후 검증 데이터를 분리하면 val 경로만 바꾸면 됨.
+# ============================================================
+
+path: ./dataset
+train: train/images
+val: test/images
+test: test/images
+
+nc: 3
+names: ['Crack', 'leak', 'tile']
