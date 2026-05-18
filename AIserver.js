@@ -66,9 +66,8 @@ const upload = multer({
 function buildDetectionText(yoloResult) {
   const { detections, summary, image_size } = yoloResult;
   if (!detections || detections.length === 0) {
-    return '[YOLO 결과] 사진에서 학습된 하자 유형(균열/누수/타일)이 탐지되지 않았습니다.';
+    return '[YOLO 탐지 결과 없음. 본 모델은 소규모 데이터로 학습된 보조 분류기일 뿐임. 사진을 직접 면밀히 검토하여 진단할 것. 천장 얼룩, 변색, 균열, 누수 자국, 곰팡이 등 시각적 단서를 적극적으로 찾을 것.]';
   }
-
   const classSummary = Object.entries(summary.class_counts)
     .map(([cls, count]) => `${KOREAN_LABELS[cls] || cls}(${cls}) ${count}개`)
     .join(', ');
@@ -88,27 +87,53 @@ function buildDetectionText(yoloResult) {
   ].join('\n');
 }
 
-async function generateDiagnosis(detectionText, userMessage = '') {
-  const systemPrompt = [
-  '당신은 건설 하자 진단 전문가다.',
-  '입력: 1) YOLO 자동탐지 텍스트(보조 정보), 2) 원본 사진(주요 판단 근거).',
-  '⚠️ YOLO는 매우 소규모 데이터로 학습된 보조 분류기일 뿐이다. YOLO가 "탐지 0건"이라고 해도 그것을 신뢰하지 말고 사진을 직접 보고 판단하라.',
-  '사진에서 다음 중 하나라도 보이면 적극적으로 진단하라: 균열, 누수 자국, 천장/벽 얼룩, 페인트 박리, 곰팡이, 변색, 타일 손상, 마감재 들뜸, 누수 흔적.',
-  'severityScore는 반드시 1~10 사이의 정수. 사진에서 어떤 이상이라도 발견되면 절대 0을 반환하지 말 것. 정말 깨끗하면 1.',
-  '반드시 하나의 JSON 객체만 응답한다. 코드블록/마크다운/설명 문장 금지.',
-  '{',
-  '  "defectContent": "...",',
-  '  "severityScore": 1~10 정수,',
-  '  "expectedSolution": "...",',
-  '  "processingMethod": "...",',
-  '  "relatedLaws": "..."',
-  '}',
-].join('\n');
+async function generateDiagnosis(detectionText, userMessage = '', imagePath = null) {
+  const hasImage = !!imagePath;
 
-  const userContent = [
+  const systemPrompt = [
+    '당신은 건설 하자 진단 전문가다.',
+    '입력: 1) YOLO 자동탐지 텍스트(매우 약한 보조 신호), 2) 원본 사진(주요 판단 근거).',
+    '⚠️ 절대 규칙: YOLO 가 "탐지 0건" 이라고 보고해도 그것을 신뢰하지 말 것. 사진을 직접 보고 판단하라.',
+    '사진에서 다음 중 하나라도 시각적으로 보이면 적극적으로 진단하라:',
+    '- 천장/벽의 변색, 얼룩, 누런 자국 → 누수 흔적',
+    '- 검은 점이나 패턴 → 곰팡이',
+    '- 표면 갈라짐(선/금) → 균열',
+    '- 표면 박리/벗겨짐 → 마감재 손상',
+    '⚠️ 균열 vs 누수 구분:',
+    '- 균열(Crack): 선/금/갈라짐. 회색/흰색 직선이나 거미줄 패턴. 모양이 선이다.',
+    '- 누수(leak): 갈색/노란색/주황색 얼룩, 변색된 면. 모양이 면적이다.',
+    '- 색과 형태로 명확히 구분: 선 = 균열, 컬러 얼룩 = 누수.',
+    '⚠️ severityScore 부여 규칙:',
+    '- 사진에 어떤 형태의 이상(얼룩/변색/누런 자국 포함)이라도 보이면 절대 1 이하 부여 금지.',
+    '- 명확한 누수/균열/곰팡이 → 5-8',
+    '- 의심 단서 → 3-4',
+    '- 정말 깨끗한 새 벽/천장이라고 100% 확신할 때만 → 1-2',
+    '반드시 하나의 JSON 객체만 응답. 마크다운/코드블록 금지.',
+    '{',
+    '  "defectContent": "...",',
+    '  "severityScore": 1~10 정수,',
+    '  "expectedSolution": "...",',
+    '  "processingMethod": "...",',
+    '  "relatedLaws": "..."',
+    '}',
+  ].join('\n');
+
+  const userText = [
     detectionText,
     userMessage ? `\n[사용자 추가 설명]\n${userMessage}` : '',
   ].join('\n');
+
+  let userContent;
+  if (hasImage) {
+    const imageBuffer = await fs.promises.readFile(imagePath);
+    const base64 = imageBuffer.toString('base64');
+    userContent = [
+      { type: 'text', text: userText },
+      { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64}` } },
+    ];
+  } else {
+    userContent = userText;
+  }
 
   const completion = await openai.chat.completions.create({
     model: OPENAI_MODEL,
@@ -166,7 +191,7 @@ app.post('/api/ai/analyze-image', upload.single('image'), async (req, res) => {
 
     // GPT-4o 진단
     const userMessage = req.body.message || '';
-    const diagnosis = await generateDiagnosis(detectionText, userMessage);
+    const diagnosis = await generateDiagnosis(detectionText, userMessage, tmpPath);
 
     res.json({
       success: true,
@@ -198,7 +223,7 @@ app.post('/api/ai/analyze-path', async (req, res) => {
   try {
     const yoloResult = await detect(YOLO_MODEL_PATH, resolved);
     const detectionText = buildDetectionText(yoloResult);
-    const diagnosis = await generateDiagnosis(detectionText, message || '');
+    const diagnosis = await generateDiagnosis(detectionText, message || '', resolved);
     res.json({ success: true, yolo: yoloResult, detectionText, diagnosis });
   } catch (err) {
     console.error('[AIserver] analyze-path 오류:', err);

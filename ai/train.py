@@ -28,7 +28,7 @@ from pathlib import Path
 def main():
     parser = argparse.ArgumentParser(description="YOLOv8-seg 건설 하자 탐지 모델 학습")
     parser.add_argument("--data", default="./data.yaml", help="데이터셋 yaml 경로")
-    parser.add_argument("--model", default="yolov8n-seg.pt",
+    parser.add_argument("--model", default="yolov8n.pt",
                         help="사전 학습 가중치 (n/s/m/l/x). 기본 yolov8n-seg (가장 가벼움)")
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--imgsz", type=int, default=640)
