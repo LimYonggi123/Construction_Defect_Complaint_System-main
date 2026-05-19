@@ -1,8 +1,5 @@
-// ============================================================
-// ai/detect.js
 // YOLOv8 ONNX 모델을 onnxruntime-node 로 직접 추론.
 // Detection / Segmentation 두 가지 모델 모두 자동 감지하여 처리.
-// ============================================================
 
 const ort = require('onnxruntime-node');
 const sharp = require('sharp');

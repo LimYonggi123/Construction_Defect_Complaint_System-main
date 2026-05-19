@@ -1,10 +1,5 @@
-// ===========================================================
-// AIserver.js
 // YOLOv8-seg ONNX 기반 건설 하자 AI 분석 서버.
-// onnxruntime-node 로 직접 추론 (Python 호출 없음).
-// server.js (포트 3000) 와 독립적으로 동작.
 // 실행:  node AIserver.js  (기본 포트 4000)
-// ===========================================================
 
 const express = require('express');
 const cors = require('cors');
@@ -21,7 +16,7 @@ const { detect } = require('./ai/detect.js');
 const app = express();
 const PORT = process.env.AI_PORT || 4000;
 
-// ---- 환경 설정 -----------------------------------------------
+// 환경 설정 
 const YOLO_MODEL_PATH =
   process.env.YOLO_MODEL_PATH ||
   path.join(__dirname, 'ai', 'models', 'best.onnx');
@@ -29,12 +24,12 @@ const YOLO_MODEL_PATH =
 const TMP_UPLOAD_DIR = path.join(__dirname, 'uploads', 'ai-temp');
 fs.mkdirSync(TMP_UPLOAD_DIR, { recursive: true });
 
-// ---- 미들웨어 ------------------------------------------------
+//미들웨어
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ---- OpenAI (기존 .env 그대로 재사용) ------------------------
+//OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: process.env.OPENAI_BASE_URL || undefined,
@@ -47,7 +42,7 @@ const KOREAN_LABELS = {
   tile: '타일 손상',
 };
 
-// ---- multer (이미지 업로드) ----------------------------------
+//multer (이미지 업로드)
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
@@ -59,9 +54,8 @@ const upload = multer({
   },
 });
 
-// ===========================================================
+
 // 보조 함수
-// ===========================================================
 
 function buildDetectionText(yoloResult) {
   const { detections, summary, image_size } = yoloResult;
@@ -154,9 +148,7 @@ async function generateDiagnosis(detectionText, userMessage = '', imagePath = nu
   }
 }
 
-// ===========================================================
 // API 라우트
-// ===========================================================
 
 // 헬스체크
 app.get('/api/ai/health', (req, res) => {
@@ -185,7 +177,7 @@ app.post('/api/ai/analyze-image', upload.single('image'), async (req, res) => {
       .jpeg({ quality: 90 })
       .toFile(tmpPath);
 
-    // YOLO 추론 (onnxruntime-node)
+    // YOLO 추론
     const yoloResult = await detect(YOLO_MODEL_PATH, tmpPath);
     const detectionText = buildDetectionText(yoloResult);
 
@@ -231,7 +223,7 @@ app.post('/api/ai/analyze-path', async (req, res) => {
   }
 });
 
-// ---- 에러 핸들러 ---------------------------------------------
+//에러 핸들러
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     const msg = err.code === 'LIMIT_FILE_SIZE'

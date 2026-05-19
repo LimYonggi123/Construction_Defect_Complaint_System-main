@@ -1,25 +1,8 @@
-# ============================================================
-# ai/train.py
 # YOLOv8-seg 모델 학습 스크립트.
-# 데이터셋(Object_Detection_v7i_yolov8.zip) 압축 해제 후 사용.
-#
-# 폴더 구조 (이 파일 기준):
-#   ai/
-#     train.py
-#     data.yaml
-#     dataset/
-#       train/images, train/labels
-#       test/images,  test/labels
-#       (valid 가 없으면 data.yaml 에서 val 을 test 로 지정)
-#
-# 사용법:
-#   cd ai
 #   python train.py                          # 기본 (50 epoch, yolov8n-seg)
 #   python train.py --epochs 100 --batch 8   # 옵션 변경
-#
 # 학습 완료 후 ./runs/defect_seg/weights/best.pt 가 생성됨.
 # 이 파일을 ai/models/best.pt 로 복사하거나 env 변수 YOLO_MODEL_PATH 로 경로 지정.
-# ============================================================
 
 import argparse
 from pathlib import Path

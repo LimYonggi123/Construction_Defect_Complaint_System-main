@@ -8,7 +8,6 @@ import { getStatusLabel } from './src/utils/status.js';
 
 ///////// AIserver 연동
 import aiApi from './src/api/AIclient.js';
-/////////
 
 const INITIAL_COMPLAINT_INFO = {
   location: '',

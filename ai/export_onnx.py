@@ -1,12 +1,8 @@
-# ============================================================
-# ai/export_onnx.py
 # 학습된 YOLOv8-seg 모델(.pt) 을 ONNX(.onnx) 로 변환.
 # 학습 직후 한 번만 실행하면 됨. 그 이후로는 Python 불필요.
-#
 # 사용법:
 #   python export_onnx.py [모델경로(.pt)] [출력경로(.onnx)]
 #   기본: ./runs/defect_seg/weights/best.pt → ./models/best.onnx
-# ============================================================
 
 import sys
 import shutil
